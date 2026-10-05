@@ -16,7 +16,9 @@ Enterprises are deploying AI agents into customer-facing workflows, but governan
 
 ## Status
 
-Side project (v0). Building in the open — each module gets its own deep-dive post.
+All five modules built. Run `python -m aegis.demo` to see the full loop:
+policy verdicts, the human approval, an eval gate, and a generated
+compliance report.
 
 ## Quickstart
 
