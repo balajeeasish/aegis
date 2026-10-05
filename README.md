@@ -14,6 +14,22 @@ Enterprises are deploying AI agents into customer-facing workflows, but governan
 4. **Human-in-the-loop approvals** — Flagged actions pause for human review with full context. Overrides are logged with who approved and why.
 5. **Compliance reports** — Export model-risk-style documentation: what the agent did, what rules applied, what was overridden, and the eval evidence. The artifact a regulator or risk committee actually wants to read.
 
+## Compliance packs
+
+Pre-built policy sets mapped to regulatory frameworks, each policy citing
+the framework section it enforces:
+
+- **SR 11-7** (`aegis.packs.sr117.SR117_PACK`) — Federal Reserve model-risk
+  guidance: model inventory, independent validation, eval-gate evidence for
+  deployments, change documentation, approved-use restrictions.
+
+```python
+from aegis.packs.sr117 import SR117_PACK
+from aegis.policy import PolicyEngine
+
+engine = PolicyEngine(SR117_PACK.policies + STANDARD_POLICIES)
+```
+
 ## Status
 
 All five modules built. Run `python -m aegis.demo` to see the full loop:
