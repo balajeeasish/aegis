@@ -39,6 +39,25 @@ def test_policy_escalates_unapproved_advice():
     assert r.verdict == "escalate"
 
 
+def test_policy_error_fails_closed_not_allow():
+    # A raising condition must not silently allow the action (audit C1).
+    def boom(detail):
+        raise ValueError("bad data")
+
+    engine = PolicyEngine([Policy("flaky", condition=boom, verdict="deny")])
+    r = engine.evaluate({})
+    assert r.verdict == "deny"
+    assert "flaky" in r.triggered
+    assert r.errors
+
+
+def test_spend_cap_malformed_amount_fails_closed():
+    engine = PolicyEngine(STANDARD_POLICIES)
+    r = engine.evaluate({"amount_usd": "not-a-number", "spend_cap_usd": 100})
+    assert r.verdict == "deny"
+    assert "spend_cap" in r.triggered
+
+
 def test_deny_beats_escalate():
     engine = PolicyEngine([
         Policy("e", condition=lambda d: True, verdict="escalate"),

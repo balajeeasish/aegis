@@ -64,6 +64,12 @@ class ApprovalQueue:
         req = self._requests.get(request_id)
         if req is None:
             raise KeyError(f"unknown approval request: {request_id}")
+        # Enforce TTL at decision time, not only when pending() sweeps.
+        # Otherwise an already-expired request could still be approved
+        # by calling approve() directly.
+        if req.status == "pending" and req.expires_at and req.expires_at < time.time():
+            self.sweep_expired()
+            raise ValueError(f"request {request_id} expired")
         if req.status != "pending":
             raise ValueError(f"request {request_id} already {req.status}")
         req.status = status

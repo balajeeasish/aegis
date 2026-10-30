@@ -24,6 +24,9 @@ class Policy:
 class PolicyResult:
     verdict: str  # allow | deny | escalate
     triggered: list[str] = field(default_factory=list)
+    # Policies whose condition raised instead of returning a verdict.
+    # These are treated as triggered (fail closed), never as "allow".
+    errors: list[str] = field(default_factory=list)
 
 
 class PolicyEngine:
@@ -35,19 +38,25 @@ class PolicyEngine:
 
     def evaluate(self, detail: dict) -> PolicyResult:
         triggered: list[str] = []
+        errors: list[str] = []
         verdict = "allow"
         for policy in self.policies:
             try:
                 violated = bool(policy.condition(detail)) if policy.condition else False
-            except Exception:
-                violated = False
+            except Exception as exc:
+                # Fail closed: a policy that cannot be evaluated must not
+                # silently allow the action. Treat it as triggered, using
+                # the policy's own verdict, and record the error so the
+                # host can distinguish "violated" from "unevaluable".
+                violated = True
+                errors.append(f"{policy.name}: {exc}")
             if violated:
                 triggered.append(policy.name)
                 if policy.verdict == "deny":
                     verdict = "deny"
                 elif verdict != "deny" and policy.verdict == "escalate":
                     verdict = "escalate"
-        return PolicyResult(verdict=verdict, triggered=triggered)
+        return PolicyResult(verdict=verdict, triggered=triggered, errors=errors)
 
 
 # ---- Standard policies for regulated deployments ---------------------------

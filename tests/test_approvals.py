@@ -53,6 +53,21 @@ def test_unknown_request_raises():
         raise AssertionError("unknown id should fail")
 
 
+def test_expired_request_cannot_be_approved_directly():
+    # TTL must be enforced at decision time, not only via pending() (audit C3).
+    q, log = _queue()
+    q.ttl_seconds = -1  # already expired
+    req = q.request("advisor-agent", "recommendation")
+    try:
+        q.approve(req.id, by="risk-officer")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expired approval should not succeed")
+    assert req.status == "expired"
+    assert any(e["action"] == "approval_expired" for e in log.entries())
+
+
 def test_expired_requests_swept():
     q, log = _queue()
     q.ttl_seconds = -1  # already expired
